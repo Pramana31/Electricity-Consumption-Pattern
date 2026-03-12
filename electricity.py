@@ -1,6 +1,5 @@
 """
 Electricity Consumption Pattern & Anomaly Detection Study
-==========================================================
 Modules:
   1. Monthly Aggregation
   2. Peak Usage Detection
@@ -9,8 +8,6 @@ Modules:
   5. Confidence Interval for Mean Consumption
   6. Energy Efficiency Interpretation
 
-Run: python electricity_analysis.py
-Requires: pip install pandas numpy matplotlib seaborn scipy
 """
 
 import numpy as np
@@ -263,3 +260,4 @@ if __name__ == "__main__":
 
 
     print("\n✓ Analysis complete.")
+
