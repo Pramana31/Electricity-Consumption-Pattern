@@ -22,9 +22,6 @@ from scipy import stats
 import warnings
 warnings.filterwarnings("ignore")
 
-# ─────────────────────────────────────────────
-# 0.  SYNTHETIC DATA GENERATOR
-# ─────────────────────────────────────────────
 def generate_data(n_days: int = 365 * 2, seed: int = 42) -> pd.DataFrame:
     """Generate realistic daily electricity + temperature data."""
     np.random.seed(seed)
@@ -59,10 +56,6 @@ def generate_data(n_days: int = 365 * 2, seed: int = 42) -> pd.DataFrame:
     df["hour_placeholder"] = 0  # daily data; kept for extensibility
     return df
 
-
-# ─────────────────────────────────────────────
-# 1.  MONTHLY AGGREGATION
-# ─────────────────────────────────────────────
 def monthly_aggregation(df: pd.DataFrame) -> pd.DataFrame:
     monthly = (
         df.groupby("month")["consumption_kwh"]
@@ -74,10 +67,6 @@ def monthly_aggregation(df: pd.DataFrame) -> pd.DataFrame:
     print(monthly[["month", "total", "mean", "std"]].to_string(index=False))
     return monthly
 
-
-# ─────────────────────────────────────────────
-# 2.  PEAK USAGE DETECTION
-# ─────────────────────────────────────────────
 def peak_usage_detection(df: pd.DataFrame, top_n: int = 10) -> pd.DataFrame:
     threshold = df["consumption_kwh"].quantile(0.95)
     peaks = df[df["consumption_kwh"] >= threshold].sort_values("consumption_kwh", ascending=False)
@@ -85,10 +74,6 @@ def peak_usage_detection(df: pd.DataFrame, top_n: int = 10) -> pd.DataFrame:
     print(peaks[["date", "consumption_kwh", "temperature_c"]].head(top_n).to_string(index=False))
     return peaks
 
-
-# ─────────────────────────────────────────────
-# 3.  CORRELATION WITH TEMPERATURE
-# ─────────────────────────────────────────────
 def temperature_correlation(df: pd.DataFrame):
     r, p = stats.pearsonr(df["temperature_c"], df["consumption_kwh"])
     slope, intercept, *_ = stats.linregress(df["temperature_c"], df["consumption_kwh"])
@@ -97,10 +82,6 @@ def temperature_correlation(df: pd.DataFrame):
     print(f"  Linear fit: consumption = {slope:.3f} × temp + {intercept:.3f}")
     return r, p, slope, intercept
 
-
-# ─────────────────────────────────────────────
-# 4.  ANOMALY DETECTION (Z-score + IQR)
-# ─────────────────────────────────────────────
 def anomaly_detection(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     # Z-score method
@@ -124,10 +105,6 @@ def anomaly_detection(df: pd.DataFrame) -> pd.DataFrame:
     print(anomalies[["date", "consumption_kwh", "z_score"]].head(10).to_string(index=False))
     return df
 
-
-# ─────────────────────────────────────────────
-# 5.  CONFIDENCE INTERVAL FOR MEAN CONSUMPTION
-# ─────────────────────────────────────────────
 def confidence_interval(df: pd.DataFrame, ci: float = 0.95) -> tuple:
     data = df["consumption_kwh"].dropna()
     mean = data.mean()
@@ -140,10 +117,6 @@ def confidence_interval(df: pd.DataFrame, ci: float = 0.95) -> tuple:
     print(f"  CI    = [{lo:.4f}, {hi:.4f}] kWh")
     return mean, lo, hi
 
-
-# ─────────────────────────────────────────────
-# 6.  ENERGY EFFICIENCY INTERPRETATION
-# ─────────────────────────────────────────────
 def energy_efficiency(df: pd.DataFrame, monthly: pd.DataFrame):
     avg_monthly = monthly["total"].mean()
     # Simple baseline: Indian residential benchmark ~200-400 kWh/month
@@ -172,10 +145,6 @@ def energy_efficiency(df: pd.DataFrame, monthly: pd.DataFrame):
     print(f"  Weekday avg             : {wd:.2f} kWh")
     print(f"  Weekend avg             : {we:.2f} kWh (+{(we-wd)/wd*100:.1f}%)")
 
-
-# ─────────────────────────────────────────────
-# VISUALIZATION  (all 6 modules in one figure)
-# ─────────────────────────────────────────────
 def plot_all(df: pd.DataFrame, monthly: pd.DataFrame,
              peaks: pd.DataFrame, mean: float, lo: float, hi: float,
              slope: float, intercept: float):
@@ -185,7 +154,7 @@ def plot_all(df: pd.DataFrame, monthly: pd.DataFrame,
     fig.suptitle("Electricity Consumption Pattern & Anomaly Detection", fontsize=16, fontweight="bold")
     gs = gridspec.GridSpec(3, 3, figure=fig, hspace=0.45, wspace=0.35)
 
-    # ── 1. Monthly Total Bar ──
+    #  1. Monthly Total Bar 
     ax1 = fig.add_subplot(gs[0, :2])
     ax1.bar(range(len(monthly)), monthly["total"], color=sns.color_palette("Blues_d", len(monthly)))
     ax1.set_xticks(range(len(monthly)))
@@ -195,7 +164,7 @@ def plot_all(df: pd.DataFrame, monthly: pd.DataFrame,
     ax1.set_title("Module 1 – Monthly Total Consumption (kWh)")
     ax1.set_ylabel("kWh")
 
-    # ── 2. Peak Usage Highlighting ──
+    # 2. Peak Usage Highlighting 
     ax2 = fig.add_subplot(gs[0, 2])
     peak_dates = peaks["date"].values
     colors = ["tomato" if d in peak_dates else "steelblue" for d in df["date"].values]
@@ -204,7 +173,7 @@ def plot_all(df: pd.DataFrame, monthly: pd.DataFrame,
     ax2.set_ylabel("kWh")
     ax2.tick_params(axis="x", rotation=30, labelsize=7)
 
-    # ── 3. Temperature Scatter + Regression ──
+    # 3. Temperature Scatter + Regression 
     ax3 = fig.add_subplot(gs[1, 0])
     ax3.scatter(df["temperature_c"], df["consumption_kwh"], alpha=0.3, s=10, color="teal")
     x_line = np.linspace(df["temperature_c"].min(), df["temperature_c"].max(), 200)
@@ -214,7 +183,7 @@ def plot_all(df: pd.DataFrame, monthly: pd.DataFrame,
     ax3.set_title("Module 3 – Temp vs Consumption")
     ax3.legend(fontsize=8)
 
-    # ── 4. Anomaly Detection Plot ──
+    # 4. Anomaly Detection Plot
     ax4 = fig.add_subplot(gs[1, 1])
     normal = df[~df["anomaly"]]
     anomalous = df[df["anomaly"]]
@@ -225,7 +194,7 @@ def plot_all(df: pd.DataFrame, monthly: pd.DataFrame,
     ax4.legend(fontsize=8)
     ax4.tick_params(axis="x", rotation=30, labelsize=7)
 
-    # ── 5. Confidence Interval Visualization ──
+    # 5. Confidence Interval Visualization 
     ax5 = fig.add_subplot(gs[1, 2])
     ax5.hist(df["consumption_kwh"], bins=40, color="skyblue", edgecolor="white", density=True)
     ax5.axvline(mean, color="navy", lw=2, label=f"Mean={mean:.1f}")
@@ -235,7 +204,7 @@ def plot_all(df: pd.DataFrame, monthly: pd.DataFrame,
     ax5.set_xlabel("kWh")
     ax5.legend(fontsize=8)
 
-    # ── 6. Efficiency: Monthly Mean + Weekend vs Weekday ──
+    # 6. Efficiency: Monthly Mean + Weekend vs Weekday 
     ax6 = fig.add_subplot(gs[2, :2])
     monthly_copy = monthly.copy()
     ax6.plot(range(len(monthly_copy)), monthly_copy["mean"], marker="o", color="darkorange", lw=2)
@@ -250,7 +219,7 @@ def plot_all(df: pd.DataFrame, monthly: pd.DataFrame,
     ax6.set_ylabel("Avg kWh/day")
     ax6.legend(fontsize=8)
 
-    # ── Weekday vs Weekend box ──
+    # Weekday vs Weekend box 
     ax7 = fig.add_subplot(gs[2, 2])
     groups = [df[~df["is_weekend"]]["consumption_kwh"].values,
               df[df["is_weekend"]]["consumption_kwh"].values]
@@ -263,10 +232,6 @@ def plot_all(df: pd.DataFrame, monthly: pd.DataFrame,
     print("\n  Chart saved → electricity_analysis.png")
     plt.show()
 
-
-# ─────────────────────────────────────────────
-# MAIN
-# ─────────────────────────────────────────────
 if __name__ == "__main__":
     print("=" * 55)
     print("  Electricity Consumption Pattern & Anomaly Study")
@@ -295,5 +260,6 @@ if __name__ == "__main__":
 
     # Visualize
     plot_all(df, monthly, peaks, mean, lo, hi, slope, intercept)
+
 
     print("\n✓ Analysis complete.")
